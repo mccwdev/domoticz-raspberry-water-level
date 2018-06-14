@@ -36,16 +36,19 @@ def main():
         GPIO.output(GPIO_TRIGGER, True)
         time.sleep(0.00001)
         GPIO.output(GPIO_TRIGGER, False)
+        start = time.time()
         while GPIO.input(GPIO_ECHO) == 0:
+            if time.time() - start > 20:
+                raise IOError("Timeout. No trigger send / received")
             pass
 
         # Measure time it took for the wave to come back on ECHO
-        start = stop = time.time()
+        start = time.time()
         measuredTime = 0
         while GPIO.input(GPIO_ECHO) == 1:
             stop = time.time()
             measuredTime = stop - start
-            if measuredTime > 1:
+            if measuredTime > 10:
                 raise IOError("Timeout. No response from device")
         if not measuredTime or  measuredTime < 0:
             raise ValueError("Invalid measured time: %d" % measuredTime)
