@@ -21,11 +21,11 @@ GPIO_TRIGGER = 24
 GPIO_ECHO = 23
 
 
-def main():
+def distance_measure():
     # Setup Raspberry's GPIO's
     GPIO.setmode(GPIO.BCM)
-    GPIO.setup(GPIO_TRIGGER,GPIO.OUT)
-    GPIO.setup(GPIO_ECHO,GPIO.IN)
+    GPIO.setup(GPIO_TRIGGER, GPIO.OUT)
+    GPIO.setup(GPIO_ECHO, GPIO.IN)
 
     try:
         # Set TRIGGER to LOW and pause
@@ -54,16 +54,24 @@ def main():
             raise ValueError("Invalid measured time: %d" % measuredTime)
 
         # Calculate the travel distance by multiplying the measured time by speed of sound
-        distanceBothWays = measuredTime * 33112 # cm/s in 20 degrees Celsius
+        distanceBothWays = measuredTime * 33112  # cm/s in 20 degrees Celsius
         distance = distanceBothWays / 2
     finally:
         GPIO.cleanup()
+    return distance
+
+
+def main():
+    # Do three measurements and take the median result
+    measurements = sorted([distance_measure(), distance_measure(), distance_measure()])
+    distance = measurements[1]
 
     # Update device in Domoticz
     url = "%s/json.htm?type=command&param=udevice&idx=%d&nvalue=0&svalue=%.1f" % \
           (DOMOTICZ_URL, DOMOTICZ_DEVICE_IDX, distance)
     resp = requests.get(url)
     print(resp.text)
+
 
 # Run the main function when the script is executed
 if __name__ == "__main__":
