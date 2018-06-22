@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 #
 #    Monitor tank water level with a Rapsberry Pi, Domoticz and a JSN-SR04T ultra-sonic distance sensor
@@ -10,6 +10,8 @@
 import time               # library for time reading time
 import RPi.GPIO as GPIO   # library to control Rpi GPIOs
 import requests
+import statistics
+
 
 # Domoticz settings
 DOMOTICZ_HOST = "domoticz"
@@ -19,6 +21,10 @@ DOMOTICZ_URL = "http://%s:8080" % DOMOTICZ_HOST
 # Select which GPIOs you will use
 GPIO_TRIGGER = 24
 GPIO_ECHO = 23
+
+NUMBER_OF_MEASUREMENTS = 5
+MIN_VALUE = 0
+MAX_VALUE = 110
 
 
 def distance_measure():
@@ -63,8 +69,12 @@ def distance_measure():
 
 def main():
     # Do three measurements and take the median result
-    measurements = sorted([distance_measure(), distance_measure(), distance_measure()])
-    distance = measurements[1]
+    measurements = []
+    for _ in range(NUMBER_OF_MEASUREMENTS):
+        d = distance_measure()
+        if MIN_VALUE < d < MAX_VALUE:
+            measurements.append(d)
+    distance = statistics.median(measurements)
 
     # Update device in Domoticz
     url = "%s/json.htm?type=command&param=udevice&idx=%d&nvalue=0&svalue=%.1f" % \
